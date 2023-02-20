@@ -1,4 +1,5 @@
 #pragma once
+#include <inttypes.h>
 
 namespace GreyMath
 {
@@ -24,11 +25,20 @@ namespace GreyMath
 		{
 		}
 
+		float& operator[](int i)
+		{
+			return f[i];
+		}
+
 		float operator[](int i) const
 		{
 			return f[i];
 		}
 	};
+
+
+	
+	typedef Vector Quaternion;
 
 
 	struct Matrix
@@ -64,6 +74,23 @@ namespace GreyMath
 		}
 
 		Matrix() : v() {}
+
+		// creates a vector from matrix' column
+		Vector GetColumnVector(int column) const
+		{
+			return Vector
+			(
+				f[0][column],
+				f[1][column],
+				f[2][column],
+				f[3][column]
+			);
+		}
+
+		Vector& operator[](int i)
+		{
+			return v[i];
+		}
 
 		Vector operator[](int i) const
 		{
