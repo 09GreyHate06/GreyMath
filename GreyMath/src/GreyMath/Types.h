@@ -35,8 +35,6 @@ namespace GreyMath
 			return f[i];
 		}
 	};
-
-
 	
 	typedef Vector Quaternion;
 

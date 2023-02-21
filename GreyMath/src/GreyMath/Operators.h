@@ -7,18 +7,18 @@
 namespace GreyMath
 {
 	struct Matrix;
-	constexpr float Dot(const Vector& lhs, const Vector& rhs);
+	float Vec4Dot(const Vector & v0, const Vector & v1);
 
 	// =========================================== Vector =================================================
 
-	Vector operator+(const Vector& lhs, const Vector& rhs)
+	Vector operator+(const Vector& v0, const Vector& v1)
 	{
-		return Vector(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w);
+		return Vector(v0.x + v1.x, v0.y + v1.y, v0.z + v1.z, v0.w + v1.w);
 	}
 
-	Vector operator-(const Vector& lhs, const Vector& rhs)
+	Vector operator-(const Vector& v0, const Vector& v1)
 	{
-		return Vector(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w);
+		return Vector(v0.x - v1.x, v0.y - v1.y, v0.z - v1.z, v0.w - v1.w);
 	}
 
 	Vector operator*(const Vector& v, float s)
@@ -31,73 +31,50 @@ namespace GreyMath
 		return Vector(v.x * s, v.y * s, v.z * s, v.w * s);
 	}
 
-	Vector operator*(const Vector& v, const Matrix& m)
-	{
-		Vector result = {};
-		for (int i = 0; i < 4; i++)
-		{
-			result[i] = Dot(v, m.GetColumnVector(i));
-		}
-
-		return result;
-	}
-
-	Vector operator*(const Matrix& m, const Vector& v)
-	{
-		Vector result = {};
-		for (int i = 0; i < 4; i++)
-		{
-			result[i] = Dot(m[i], v);
-		}
-
-		return result;
-	}
-
-
 	Vector operator/(const Vector& v, float s)
 	{
 		return Vector(v.x / s, v.y / s, v.z / s, v.w / s);
 	}
 
 
-	Vector& operator+=(Vector& lhs, const Vector& rhs)
+	Vector& operator+=(Vector& v0, const Vector& v1)
 	{
-		lhs.x += rhs.x;
-		lhs.y += rhs.y;
-		lhs.z += rhs.z;
-		lhs.w += rhs.w;
+		v0.x += v1.x;
+		v0.y += v1.y;
+		v0.z += v1.z;
+		v0.w += v1.w;
 
-		return lhs;
+		return v0;
 	}
 
-	Vector& operator-=(Vector& lhs, const Vector& rhs)
+	Vector& operator-=(Vector& v0, const Vector& v1)
 	{
-		lhs.x -= rhs.x;
-		lhs.y -= rhs.y;
-		lhs.z -= rhs.z;
-		lhs.w -= rhs.w;
+		v0.x -= v1.x;
+		v0.y -= v1.y;
+		v0.z -= v1.z;
+		v0.w -= v1.w;
 
-		return lhs;
+		return v0;
 	}
 
-	Vector& operator*=(Vector& lhs, float s)
+	Vector& operator*=(Vector& v0, float s)
 	{
-		lhs.x *= s;
-		lhs.y *= s;
-		lhs.z *= s;
-		lhs.w *= s;
+		v0.x *= s;
+		v0.y *= s;
+		v0.z *= s;
+		v0.w *= s;
 
-		return lhs;
+		return v0;
 	}
 
-	Vector& operator/=(Vector& lhs, float s)
+	Vector& operator/=(Vector& v0, float s)
 	{
-		lhs.x /= s;
-		lhs.y /= s;
-		lhs.z /= s;
-		lhs.w /= s;
+		v0.x /= s;
+		v0.y /= s;
+		v0.z /= s;
+		v0.w /= s;
 
-		return lhs;
+		return v0;
 	}
 
 
@@ -120,14 +97,14 @@ namespace GreyMath
 	// =========================================== Matrix ================================================= 
 
 
-	Matrix operator+(const Matrix& a, const Matrix& b)
+	Matrix operator+(const Matrix& m0, const Matrix& m1)
 	{
-		return Matrix(a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]);
+		return Matrix(m0[0] + m1[0], m0[1] + m1[1], m0[2] + m1[2], m0[3] + m1[3]);
 	}
 
-	Matrix operator-(const Matrix& a, const Matrix& b)
+	Matrix operator-(const Matrix& m0, const Matrix& m1)
 	{
-		return Matrix(a[0] - b[0], a[1] - b[1], a[2] - b[2], a[3] - b[3]);
+		return Matrix(m0[0] - m1[0], m0[1] - m1[1], m0[2] - m1[2], m0[3] - m1[3]);
 	}
 
 	Matrix operator-(const Matrix& m)
@@ -145,7 +122,7 @@ namespace GreyMath
 		return Matrix(m[0] * s, m[1] * s, m[2] * s, m[3] * s);
 	}
 
-	Matrix operator*(const Matrix& a, const Matrix& b)
+	Matrix operator*(const Matrix& m0, const Matrix& m1)
 	{
 		Matrix ab;
 		
@@ -157,7 +134,7 @@ namespace GreyMath
 		//		float ij = 0.0f;
 		//		for (int k = 0; k < 4; k++)
 		//		{
-		//			ij += a[i][k] * b[k][j];
+		//			ij += m0[i][k] * m1[k][j];
 		//		}
 		//
 		//		ab[i][j] = ij;
@@ -168,7 +145,7 @@ namespace GreyMath
 		{
 			for (int j = 0; j < 4; j++)
 			{
-				ab[i][j] = Dot(a[i], b.GetColumnVector(j));
+				ab[i][j] = Vec4Dot(m0[i], m1.GetColumnVector(j));
 			}
 		}
 

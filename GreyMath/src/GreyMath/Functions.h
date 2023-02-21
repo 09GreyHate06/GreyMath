@@ -7,250 +7,297 @@
 
 namespace GreyMath
 {
-	float Determinant(const Matrix&, int);
-	Matrix Inverse(const Matrix&, int, std::vector<Matrix>*);
-	Matrix Transpose(const Matrix&);
-	Matrix CofactorMatrix(const Matrix&, int);
+	Quaternion QuatConjugate(const Quaternion&);
+	Quaternion QuatMultiply(const Quaternion&, const Quaternion&);
 
 	// =========================================== Vector =================================================
-
 	// = sqrt(x^2 + y^2 ... n^2)
-	float Magnitude(const Vector& v)
+	float Vec4Magnitude(const Vector& v)
 	{
 		return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w);
 	}
 
-	// v / magnitude(v)
-	Vector Normalized(const Vector& v)
+	// = sqrt(x^2 + y^2 ... n^2)
+	float Vec3Magnitude(const Vector& v)
 	{
-		return v / Magnitude(v);
+		return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
 	}
 
-	// lhs.x^2 + lhs.y^2 + lhs.z^2 + lhs.w^2 == ||lhs|| * ||rhs|| * cos(a)
-	constexpr float Dot(const Vector& lhs, const Vector& rhs)
+	// = sqrt(x^2 + y^2 ... n^2)
+	float Vec2Magnitude(const Vector& v)
 	{
-		return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w;
+		return sqrtf(v.x * v.x + v.y * v.y);
 	}
+
+	// v / |v|
+	Vector Vec4Normalized(const Vector& v)
+	{
+		return v / Vec4Magnitude(v);
+	}
+
+	// v / |v|
+	Vector Vec3Normalized(const Vector& v)
+	{
+		return v / Vec3Magnitude(v);
+	}
+
+	// v / |v|
+	Vector Vec2Normalized(const Vector& v)
+	{
+		return v / Vec2Magnitude(v);
+	}
+
+
+	// v0.x^2 + v0.y^2 + v0.z^2 + v0.w^2 == ||v0|| * ||v1|| * cos(a)
+	float Vec4Dot(const Vector& v0, const Vector& v1)
+	{
+		return v0.x * v1.x + v0.y * v1.y + v0.z * v1.z + v0.w * v1.w;
+	}
+
+	// v0.x^2 + v0.y^2 + v0.z^2== ||v0|| * ||v1|| * cos(a)
+	float Vec3Dot(const Vector& v0, const Vector& v1)
+	{
+		return v0.x * v1.x + v0.y * v1.y + v0.z * v1.z;
+	}
+
+	// v0.x^2 + v0.y^2 == ||v0|| * ||v1|| * cos(a)
+	float Vec2Dot(const Vector& v0, const Vector& v1)
+	{
+		return v0.x * v1.x + v0.y * v1.y;
+	}
+
 
 	// Pseudodeterminant
 	// |   i      j       k   |
-	// | lhs.x  lhs.y   lhs.z | 
-	// | rhs.x  rhs.y   rhs.z |
-	// = i(lhs.y * rhs.z - lhs.z * rhs.y) - j(lhs.x * rhs.z - lhs.z * rhs.x) + k(lhs.x * rhs.y - lhs.y * rhs.x)
-	// ||result|| = ||lhs|| * ||rhs|| * sin(a)
-	Vector Cross(const Vector& lhs, const Vector& rhs)
+	// | v0.x  v0.y   v0.z | 
+	// | v1.x  v1.y   v1.z |
+	// = i(v0.y * v1.z - v0.z * v1.y) - j(v0.x * v1.z - v0.z * v1.x) + k(v0.x * v1.y - v0.y * v1.x)
+	// ||result|| = ||v0|| * ||v1|| * sin(a)
+	Vector Vec3Cross(const Vector& v0, const Vector& v1)
 	{
 		//Vector i(1.0f, 0.0f, 0.0f, 0.0f);
 		//Vector j(0.0f, 1.0f, 0.0f, 0.0f);
 		//Vector k(0.0f, 0.0f, 1.0f, 0.0f);
 		//
-		//return i * (lhs.y * rhs.z - lhs.z * rhs.y) - j * (lhs.x * rhs.z - lhs.z * rhs.x) + k * (lhs.x * rhs.y - lhs.y * rhs.x);
+		//return i * (v0.y * v1.z - v0.z * v1.y) - j * (v0.x * v1.z - v0.z * v1.x) + k * (v0.x * v1.y - v0.y * v1.x);
 
-		return Vector(lhs.y * rhs.z - lhs.z * rhs.y, lhs.z * rhs.x - lhs.x * rhs.z, lhs.x * rhs.y - lhs.y * rhs.x, 0.0f);
+		return Vector(v0.y * v1.z - v0.z * v1.y, v0.z * v1.x - v0.x * v1.z, v0.x * v1.y - v0.y * v1.x, 1.0f);
 	}
 
 	// (v0 . v1) / ||v1||^2) * v1
-	Vector ProjectionOfV0OntoV1(const Vector& v0, const Vector& v1)
+	Vector Vec3ProjectionOfV0OntoV1(const Vector& v0, const Vector& v1)
 	{
 		//return (Dot(v0, v1) / Magnitude(v1)) * Normalized(v1);
 
-		float v1MagSqrd = Dot(v1, v1);
-		return (Dot(v0, v1) / v1MagSqrd) * v1;
+		float v1MagSqrd = Vec3Dot(v1, v1);
+		return (Vec3Dot(v0, v1) / v1MagSqrd) * v1;
 	}
 
-	// Algorithm: https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
-	std::array<Vector, 3> GramSchmidtOrthogonalization(const std::array<Vector, 3>& basis)
+	Vector Vec4Transform(const Vector& v, const Matrix& m)
 	{
-		std::array<Vector, 3> result;
-		result[0] = basis[0];
+		Vector v_(0.0f, 0.0f, 0.0f, 1.0f);
 
-		for (int i = 1; i < 3; i++)
+		for (int i = 0; i < 4; i++)
 		{
-			Vector projectionSum(0.0f, 0.0f, 0.0f, 0.0f);
-			for (int k = 0; k < i; k++)
-			{
-				projectionSum = projectionSum + ProjectionOfV0OntoV1(basis[i], result[k]);
-			}
-
-			result[i] = basis[i] - projectionSum;
+			v_[i] = Vec4Dot(v, m.GetColumnVector(i));
 		}
 
-		return result;
+		return v_;
+	}
+
+	Vector Vec3Transform(const Vector& v, const Matrix& m)
+	{
+		Vector v_(0.0f, 0.0f, 0.0f, 1.0f);
+
+		for (int i = 0; i < 3; i++)
+		{
+			v_[i] = Vec3Dot(v, m.GetColumnVector(i));
+		}
+
+		return v_;
+	}
+
+	Vector Vec2Transform(const Vector& v, const Matrix& m)
+	{
+		Vector v_(0.0f, 0.0f, 0.0f, 1.0f);
+
+		for (int i = 0; i < 2; i++)
+		{
+			v_[i] = Vec2Dot(v, m.GetColumnVector(i));
+		}
+
+		return v_;
 	}
 
 	/// <summary>
-	/// Algorithm:
-	/// Mathematics for 3D Game Programming  and Computer Graphics; Page 36: Algorthm 3.6
-	/// https://canvas.projekti.info/ebooks/Mathematics%20for%203D%20Game%20Programming%20and%20Computer%20Graphics,%20Third%20Edition.pdf
+	/// Rotate a vector using quaternion
 	/// </summary>
-	/// <param name="coefs">Coefficient Matrix</param>
-	/// <param name="constants">Constants or the right hand side of the system</param>
-	/// <param name="n">number of variables or size of Matrix_nxn</param>
+	/// <param name="v">vector to ratate</param>
+	/// <param name="q">unit quaternion</param>
 	/// <returns></returns>
-	Vector GussianElimination(const Matrix& coefs, const Vector& constants, int n)
+	Vector Vec3Rotate(const Vector& v, const Quaternion& q)
 	{
-		Matrix M = coefs;
-		Vector C = constants;
+		return QuatMultiply(QuatMultiply(q, v), QuatConjugate(q));
+	}
 
-		int i = 0;
-		for (int j = 0; j < n; j++)
-		{
-			int rowOfLargestLeadCoef = i;
-			float curLargestCoef = abs(M[i][j]);
-			for (int k = i; k < n; k++)
-			{
-				float coef = abs(M[k][j]);
-				if (coef > curLargestCoef)
-				{
-					curLargestCoef = coef;
-					rowOfLargestLeadCoef = k;
-				}
-			}
 
-			if (rowOfLargestLeadCoef != i)
-			{
-				if (i == 0)
-				{
-					switch (rowOfLargestLeadCoef)
-					{
-					case 1:
-						M = Matrix(
-							M[rowOfLargestLeadCoef],
-							M[i],
-							M[2],
-							M[3]
-						);
 
-						C = Vector(C[rowOfLargestLeadCoef], C[i], C[2], C[3]);
-						break;
-					case 2:
-						M = Matrix(
-							M[rowOfLargestLeadCoef],
-							M[1],
-							M[i],
-							M[3]
-						);
 
-						C = Vector(C[rowOfLargestLeadCoef], C[1], C[i], C[3]);
-						break;
-					case 3:
-						M = Matrix(
-							M[rowOfLargestLeadCoef],
-							M[1],
-							M[2],
-							M[i]
-						);
 
-						C = Vector(C[rowOfLargestLeadCoef], C[1], C[2], C[i]);
-						break;
-					}
-				}
-				else if (i == 1)
-				{
-					switch (rowOfLargestLeadCoef)
-					{
-					case 2:
-						M = Matrix(
-							M[0],
-							M[rowOfLargestLeadCoef],
-							M[i],
-							M[3]
-						);
 
-						C = Vector(C[0], C[rowOfLargestLeadCoef], C[i], C[3]);
-						break;
-					case 3:
-						M = Matrix(
-							M[0],
-							M[rowOfLargestLeadCoef],
-							M[2],
-							M[i]
-						);
 
-						C = Vector(C[0], C[rowOfLargestLeadCoef], C[2], C[i]);
-						break;
-					}
-				}
-				else
-				{
-					// largest coef row = 3
-					// i == 2
-					M = Matrix(
-						M[0],
-						M[1],
-						M[rowOfLargestLeadCoef],
-						M[i]
-					);
 
-					C = Vector(C[0], C[1], C[rowOfLargestLeadCoef], C[i]);
-				}
-			}
 
-			// set leading coef to 1
-			{
-				float temp = 1.0f / M[i][j];
-				M[i] = temp * M[i];
-				C[i] = temp * C[i];
-			}
 
-			// set all under the leading coef to 0
-			for (int r = 0; r < n; r++)
-			{
-				if (r == i)
-					continue;
 
-				float temp = -M[r][j];
-				M[r] = temp * M[i] + M[r];
-				C[r] = temp * C[i] + C[r];
-			}
 
-			i++;
-		}
 
-		return C;
+
+
+
+
+
+	
+
+
+
+
+
+	// =========================================== Quaternion =============================================
+
+	Quaternion QuatIdentity()
+	{
+		return Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
 	}
 
 	/// <summary>
-	/// Algorithm:
-	/// Mathematics for 3D Game Programming  and Computer Graphics; Page 53: Equation 3.69:
-	/// https://canvas.projekti.info/ebooks/Mathematics%20for%203D%20Game%20Programming%20and%20Computer%20Graphics,%20Third%20Edition.pdf
+	/// lets say that q0 = (s0 + v0) and q1 = (s1 + v1) s0 and s1 is the scalar part(the w component) and v0 and v1 is the vector part(the x, y, z component) then 
+	/// q0*q1 = s0 * s1 - Dot(v0, v1) + s0 * v1 + s1 * v0 + Cross(v0, v1) 
+	/// = Vector((s0 * v1 + s1 * v0 + Cross(v0, v1)).xyz, s0 * s1 - Dot(v0, v1))
 	/// </summary>
-	/// <param name="coefs">Coefficient Matrix</param>
-	/// <param name="constants">Constants or the right hand side of the system</param>
-	/// <param name="n">number of variables or size of Matrix_nxn</param>
+	/// <param name="q0"></param>
+	/// <param name="q1"></param>
 	/// <returns></returns>
-	Vector CramersRule(const Matrix& coefM, const Vector& constants, int n)
+	Quaternion QuatMultiply(const Quaternion& q0, const Quaternion& q1)
 	{
-		// alt algorithm
-		// ax + by + cz = d
-		// D = Determinant of 3x3 matrix of coef [a_i, b_i, c_i]
-		// Dx = Determinant of 3x3 matrix of coef and constant [d_i, b_i, c_i]
-		// Dy = Determinant of 3x3 matrix of coef and constant [a_i, d_i, c_i]
-		// Dz = Determinant of 3x3 matrix of coef and constant [a_i, b_i, d_i]
-		// x = Dx/D; y = Dy/D; z= Dz/D;
-		//
-		//Matrix CM = CofactorMatrix(coefM, 3);
-		//float detM = Determinant(coefM, 3);
-		//Vector res;
-		//for (int i = 0; i < n; i++)
-		//{
-		//	for (int j = 0; j < n; j++)
-		//	{
-		//		res[i] += CM[j][i] * constants[j];
-		//	}
-		//
-		//	res[i] *= 1 / detM;
-		//}
-		//
-		//return res;
+		// i^2 = j^2 = k^2 = -1
+		// ij = -ji = k; jk = -kj = i; ki = -ik = j
+		// 
+		// (q0.w + q0.x*i + q0.y*j + q0.z*k) * (q1.w + q1.x*i + q1.y*j + q1.z*k)
+		// =
+		// a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z +
+		// (a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y)*i +
+		// (a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x)*j +
+		// (a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w)*k
+		// 
+		// compact way:
+		// lets say that q0 = (s0 + v0) and q1 = (s1 + v1) s0 and s1 is the scalar part(the w component) and v0 and v1 is the vector part(the x, y, z component) then
+		// q0*q1 = s0*s1 - Dot(v0, v1) + s0*v1 + s1*v0 + Cross(v0, v1)
+		// = Vector((s0*v1 + s1*v0 + Cross(v0, v1)).xyz, s0*s1 - Dot(v0, v1))
 
-		Matrix coefMI = Inverse(coefM, n, nullptr);
-		return constants * Transpose(coefMI);
+		float s = q0.w * q1.w - Vec3Dot(q0, q1);
+		Vector v = q0.w * q1 + q1.w * q0 + Vec3Cross(q0, q1);
+		v.w = s;
+		return v;
 	}
+
+	Quaternion QuatNormalized(const Quaternion& q)
+	{
+		return Vec4Normalized(q);
+	}
+
+	/// <summary>
+	/// = (-q.x, -q.y, - q.z, q.w)
+	/// </summary>
+	/// <param name="q"></param>
+	/// <returns></returns>
+	Quaternion QuatConjugate(const Quaternion& q)
+	{
+		return Quaternion(-q.x, -q.y, -q.z, q.w);
+	}
+
+	/// <summary>
+	/// Inverse(q) = Conjugate(q)/|q|^2
+	/// </summary>
+	/// <param name="q"></param>
+	/// <returns></returns>
+	Quaternion QuatInverse(const Quaternion& q)
+	{
+		//q*Conjugate(q) = Conjugate(q)*q = Dot(q, q) = |q|^2
+		// given that
+		// Inverse(q) = Conjugate(q)/|q|^2
+		// q*Inverse(q) = q*Conjugate(q) / |q|^2 = |q|^2 / |q|^2 = 1
+		return QuatConjugate(q) / Vec4Dot(q, q);
+	}
+
+	Quaternion QuatRotationAxis(const Vector& axis, float angle)
+	{
+		float s = sinf(0.5f * angle);
+		float c = cosf(0.5f * angle);
+
+		return Quaternion(s * axis.x, s * axis.y, s * axis.z, c);
+	}
+
+	Quaternion QuatRotationRollPitchYaw(float pitch, float yaw, float roll)
+	{
+		float sP = sinf(0.5f * pitch);
+		float sY = sinf(0.5f * yaw);
+		float sR = sinf(0.5f * roll);
+
+		float cP = cosf(0.5f * pitch);
+		float cY = cosf(0.5f * yaw);
+		float cR = cosf(0.5f * roll);
+
+
+		Quaternion p(sP, 0.0f, 0.0f, cP);
+		Quaternion y(0.0f, sY, 0.0f, cY);
+		Quaternion r(0.0f, 0.0f, sR, cR);
+
+		return QuatMultiply(QuatMultiply(y, p), r);
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	// =========================================== Matrix =================================================
 
-	Matrix Identity()
+	Matrix MatIdentity()
 	{
 		return Matrix
 		(
@@ -261,7 +308,7 @@ namespace GreyMath
 		);
 	}
 
-	Matrix Transpose(const Matrix& m)
+	Matrix MatTranspose(const Matrix& m)
 	{
 		return Matrix
 		(
@@ -281,7 +328,7 @@ namespace GreyMath
 	/// <param name="m"> Linearly independent matrix</param>
 	/// <param name="n"> Size of row and column</param>
 	/// <returns>Determinant of Matrix m</returns>
-	float Determinant(const Matrix& m, int n)
+	float MatDeterminant(const Matrix& m, int n)
 	{
 		assert(0 < n && n < 5 && "size:n not supported");
 
@@ -408,7 +455,7 @@ namespace GreyMath
 	/// <param name="n"> size row and column</param>
 	/// <param name="elementaryRows"> nullptr if you dont want to get 'm' elementary rows</param>
 	/// <returns></returns>
-	Matrix Inverse(const Matrix& m, int n, std::vector<Matrix>* elementaryRows)
+	Matrix MatInverse(const Matrix& m, int n, std::vector<Matrix>* elementaryRows)
 	{
 		assert(1 < n && n < 5 && "size:n not supported");
 
@@ -422,7 +469,7 @@ namespace GreyMath
 		// (1/Dot(m[k], CF.GetColumnVector(k))) * CF;
 
 		Matrix M = m;
-		Matrix M_ = Identity();
+		Matrix M_ = MatIdentity();
 
 		for (int j = 0; j < n; j++)
 		{
@@ -624,7 +671,7 @@ namespace GreyMath
 
 			if (elementaryRows)
 			{
-				Matrix I = Identity();
+				Matrix I = MatIdentity();
 				I[j] = 1.0f / temp * I[j];
 				elementaryRows->push_back(I);
 			}
@@ -640,7 +687,7 @@ namespace GreyMath
 
 				if (elementaryRows)
 				{
-					Matrix I = Identity();
+					Matrix I = MatIdentity();
 					I[r] = temp * I[j] + I[r];
 					elementaryRows->push_back(I);
 				}
@@ -655,12 +702,12 @@ namespace GreyMath
 	/// <param name="i">row of number to be calculated</param>
 	/// <param name="j">column of number to be calculated</param>
 	/// <returns></returns>
-	float Cofactor(const Matrix& m, int n, int i, int j)
+	float MatCofactor(const Matrix& m, int n, int i, int j)
 	{
 		assert(1 < n && n < 5 && "size:n not supported");
 
 		float exp = (i + 1.0f) + (j + 1.0f);
- 		float sign = pow(-1.0f, exp);
+		float sign = pow(-1.0f, exp);
 
 		Matrix M = {};
 
@@ -684,14 +731,14 @@ namespace GreyMath
 			r++;
 		}
 
-		
-		return sign * Determinant(M, n - 1);
+
+		return sign * MatDeterminant(M, n - 1);
 	}
 
 	/// <param name="m">matrix</param>
 	/// <param name="n">row and column size</param>
 	/// <returns></returns>
-	Matrix CofactorMatrix(const Matrix& m, int n)
+	Matrix MatCofactorMatrix(const Matrix& m, int n)
 	{
 		assert(1 < n && n < 5 && "size:n not supported");
 
@@ -701,22 +748,18 @@ namespace GreyMath
 		{
 			for (int j = 0; j < n; j++)
 			{
-				M[i][j] = Cofactor(m, n, i, j);
+				M[i][j] = MatCofactor(m, n, i, j);
 			}
 		}
 
 		return M;
 	}
 
-
-
-
-
 	// Matrix Transformation
 
-	Matrix Scale(float x, float y, float z)
+	Matrix MatScale(float x, float y, float z)
 	{
-		Matrix res = Identity();
+		Matrix res = MatIdentity();
 		res[0][0] = x;
 		res[1][1] = y;
 		res[2][2] = z;
@@ -724,14 +767,14 @@ namespace GreyMath
 		return res;
 	}
 
-	Matrix Scale(const Vector& v)
+	Matrix MatScale(const Vector& v)
 	{
-		return Scale(v.x, v.y, v.z);
+		return MatScale(v.x, v.y, v.z);
 	}
 
-	Matrix Translate(float x, float y, float z)
+	Matrix MatTranslate(float x, float y, float z)
 	{
-		Matrix res = Identity();
+		Matrix res = MatIdentity();
 		res[3][0] = x;
 		res[3][1] = y;
 		res[3][2] = z;
@@ -739,12 +782,22 @@ namespace GreyMath
 		return res;
 	}
 
-	Matrix Translate(const Vector& v)
+	Matrix MatTranslate(const Vector& v)
 	{
-		return Translate(v.x, v.y, v.z);
+		return MatTranslate(v.x, v.y, v.z);
 	}
 
-	Matrix RotateY(float angle)
+	Matrix MatRotationX(float angle)
+	{
+		return Matrix(
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, cosf(angle), sinf(angle), 0.0f,
+			0.0f, -sinf(angle), cosf(angle), 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+		);
+	}
+
+	Matrix MatRotationY(float angle)
 	{
 		return Matrix(
 			cosf(angle), 0.0f, -sinf(angle), 0.0f,
@@ -754,7 +807,7 @@ namespace GreyMath
 		);
 	}
 
-	Matrix RotateZ(float angle)
+	Matrix MatRotationZ(float angle)
 	{
 		return Matrix(
 			cosf(angle), sinf(angle), 0.0f, 0.0f,
@@ -771,8 +824,9 @@ namespace GreyMath
 	/// <param name="angle"></param>
 	/// <param name="axis"></param>
 	/// <returns></returns>
-	Matrix RotateAxis(float angle, const Vector& axis)
+	Matrix MatRotationAxis(float angle, const Vector& axis)
 	{
+		// P_rot = P_para + cos(angle)P_perp + sin(angle)axis x P_perp
 		// P_rot = Pcos(angle) + (axis x P)sin(angle) + axis(axis . P)(1 - cos(angle))
 		// =
 		//             | 1  0  0 |	              |  0		  axis.z  -axis.y |						|   axis.x^2     axis.x*axis.y  axis.x*axis.z  |
@@ -784,26 +838,33 @@ namespace GreyMath
 		// P | (1-c)axis.x*axis.y - s*axis.z  c + (1-c)axis.y^2              (1-c)axis.y*axis.z + s*axis.x	|
 		//	 | (1-c)axis.x*axis.z + s*axis.y  (1-c)axis.y*axis.z - s*axis.x  c + (1-c)axis.z^2				|
 
-		Vector a = Normalized(axis);
+		Vector a = Vec3Normalized(axis);
 		float s = sinf(angle);
 		float c = cosf(angle);
 		Vector temp = (1 - c) * a;
 
 		return Matrix(
-			c + temp.x * a.x,       temp.x * a.y + s * a.z, temp.x * a.z - s * a.y, 0,
-			temp.x * a.y - s * a.z, c + temp.y * a.y,       temp.y * a.z + s * a.x, 0,
-			temp.x * a.z + s * a.y, temp.y * a.z - s * a.x, c + temp.z * a.z,       0,
-			0,                      0,                      0,                      1
+			c + temp.x * a.x, temp.x * a.y + s * a.z, temp.x * a.z - s * a.y, 0,
+			temp.x * a.y - s * a.z, c + temp.y * a.y, temp.y * a.z + s * a.x, 0,
+			temp.x * a.z + s * a.y, temp.y * a.z - s * a.x, c + temp.z * a.z, 0,
+			0, 0, 0, 1
 		);
 	}
 
-	Vector CalcTriangleNormal(const Vector& a, const Vector& b, const Vector& c)
+	/// <summary>
+	/// Matrix representation of quaternion rotation. Read the "Quaternion section of Mathematics for 3D Game Programming and Computer Graphics"
+	/// </summary>
+	/// <param name="q"></param>
+	/// <returns></returns>
+	Matrix MatRotationQuaternion(const Quaternion& q)
 	{
-		return Cross(b - a, c - a);
-	}
-
-	Vector RotateEulerFormula(float angle, const Vector& axis, const Vector& v)
-	{
-		return cosf(angle) * v + sinf(angle) * Cross(axis, v);
+		Quaternion temp = 2 * q;
+		return Matrix
+		(
+			1.0f - temp.y * q.y - temp.z*q.z, temp.x * q.y + temp.w * q.z,        temp.x * q.z - temp.w * q.y,        0.0f,
+			temp.x * q.y - temp.w * q.z,      1.0f - temp.x * q.x - temp.z * q.z, temp.y * q.z + temp.w * q.x,        0.0f,
+			temp.x * q.z + temp.w * q.y,      temp.y * q.z - temp.w * q.x,        1.0f - temp.x * q.x - temp.y * q.y, 0.0f,
+			0.0f,                             0.0f,                               0.0f,                               1.0f
+		);
 	}
 }

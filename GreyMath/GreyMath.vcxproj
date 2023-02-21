@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\GreyMath.h" />
+    <ClInclude Include="src\GreyMath\ExperimentalFunctions.h" />
     <ClInclude Include="src\GreyMath\Test.h" />
     <ClInclude Include="src\GreyMath\Functions.h" />
     <ClInclude Include="src\GreyMath\Operators.h" />
