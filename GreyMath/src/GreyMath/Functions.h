@@ -11,6 +11,7 @@ namespace GreyMath
 	Quaternion QuatMultiply(const Quaternion&, const Quaternion&);
 
 	// =========================================== Vector =================================================
+	
 	// = sqrt(x^2 + y^2 ... n^2)
 	float Vec4Magnitude(const Vector& v)
 	{
@@ -81,7 +82,7 @@ namespace GreyMath
 		//
 		//return i * (v0.y * v1.z - v0.z * v1.y) - j * (v0.x * v1.z - v0.z * v1.x) + k * (v0.x * v1.y - v0.y * v1.x);
 
-		return Vector(v0.y * v1.z - v0.z * v1.y, v0.z * v1.x - v0.x * v1.z, v0.x * v1.y - v0.y * v1.x, 1.0f);
+		return Vector(v0.y * v1.z - v0.z * v1.y, v0.z * v1.x - v0.x * v1.z, v0.x * v1.y - v0.y * v1.x, 0.0f);
 	}
 
 	// (v0 . v1) / ||v1||^2) * v1
@@ -140,6 +141,20 @@ namespace GreyMath
 		return QuatMultiply(QuatMultiply(q, v), QuatConjugate(q));
 	}
 
+	// only work when axis and v are perpendicular
+	///// <summary>
+	///// Rotate a vector using euler's formula (e^angle,axis)*v = (cos(angle) + sin(angle)*axis)*v = cos(angle)*v + sin(angle)*Cross(axis, v)
+	///// </summary>
+	///// <param name="v">vector to rotate</param>
+	///// <param name="axis">axis of rotation</param>
+	///// <param name="angle">angle in radians</param>
+	///// <returns></returns>
+	//Vector Vec3Rotate(const Vector& v, const Vector& axis, float angle)
+	//{
+	//	Vector axis_ = Vec3Normalized(axis);
+
+	//	return cosf(angle) * v + sinf(angle) * Vec3Cross(axis, v);
+	//}
 
 
 
@@ -706,8 +721,8 @@ namespace GreyMath
 	{
 		assert(1 < n && n < 5 && "size:n not supported");
 
-		float exp = (i + 1.0f) + (j + 1.0f);
-		float sign = pow(-1.0f, exp);
+		int exp = (i + 1) + (j + 1);
+		float sign = exp % 2 == 0 ? 1.0f : -1.0f;
 
 		Matrix M = {};
 

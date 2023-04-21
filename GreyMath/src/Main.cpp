@@ -8,31 +8,37 @@ using namespace DirectX;
 
 #define G_PI 3.14159265359f
 
-Quaternion Test(const Vector& v)
-{
-	float theta = 360.0f * G_PI / 180.0f;
-
-	Vector n = Vec3Normalized(Vector(1.0f, 1.0f, 1.0f, 0.0f));
-	Quaternion q(sinf(theta / 2.0f) * n.x, sinf(theta / 2.0f) * n.y, sinf(theta / 2.0f) * n.z, cosf(theta / 2.0f));
-
-	return QuatMultiply(QuatMultiply(q, v), QuatInverse(q));
-}
-
 int main()
 {
-	Vector v(1.0f, 3.0f, 4.0f, 0.0f);
-	Matrix rot = MatRotationQuaternion(QuatRotationRollPitchYaw(90.0f * G_PI / 180.0f, 90.0f * G_PI / 180.0f, 90.0f * G_PI / 180.0f));
-	std::cout << Vec3Transform(v, rot) << '\n';
+	//Vector N(0, 1, 0, 0);
+	//Vector P(0, 6, 0, 0);
+	//Vector Q(1, 2, 23, 0);
 
-	XMVECTOR v_ = XMVectorSet(1.0f, 3.0f, 4.0f, 0.0f);
-	XMMATRIX rot_ = XMMatrixRotationQuaternion(XMQuaternionRotationRollPitchYaw(90.0f * G_PI / 180.0f, 90.0f * G_PI / 180.0f, 90.0f * G_PI / 180.0f));
+	//float D = Vec3Dot(-N, P);
 
+	//Matrix planeTransform = MatRotationQuaternion(QuatRotationRollPitchYaw(0.0f, 0.0f, -90.0f * G_PI / 180.0f)) *
+	//	MatTranslate(6.0f, 0.0f, 0.0f);
 
-	XMFLOAT4 v__;
-	XMFLOAT4X4 rot__;
-	XMStoreFloat4x4(&rot__, rot_);
-	XMStoreFloat4(&v__, XMVector3Transform(v_, rot_));
-	std::cout << (*(Vector*)&v__) << '\n';
+	//Vector L = N;
+	//L.w = D;
 
+	//std::cout << L << '\n';
+	////std::cout << MatInverse(planeTransform, 4, nullptr) << '\n';
+	//std::cout << Vec4Transform(L, MatTranspose(MatInverse(planeTransform, 4, nullptr))) << '\n';
+
+	Vector v(255, 0, 0, 0);
+	Vector n(255, 255, 255, 0);
+	float w = 1.0f / 4.0f;
+
+	Vector res;
+	for (int i = 0; i < 4; i++)
+	{
+		if (i < 2)
+			res += w * v;
+		else
+			res += w * n;
+	}
+	std::cout << res << '\n';
+	
 	return 0;
 }
